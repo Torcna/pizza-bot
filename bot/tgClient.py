@@ -21,7 +21,7 @@ def makeRequest(method: str, **params) -> dict:
     with urllib.request.urlopen(request) as response:
         responseBody = response.read().decode("utf-8")
         responseJSON = json.loads(responseBody)
-        if responseJSON["ok"] == True:
+        if responseJSON["ok"]:
             return responseJSON["result"]
         else:
             print("not ok")

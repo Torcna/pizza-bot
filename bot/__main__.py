@@ -1,5 +1,3 @@
-import time
-
 from bot.dispatcher import Dispatcher
 from bot.handlers.database_logger import DatabaseLogger
 from bot.handlers.ensure_user_exists import EnsureUserExists

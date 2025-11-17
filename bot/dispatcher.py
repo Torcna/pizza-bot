@@ -33,5 +33,5 @@ class Dispatcher:
 
         for handler in self._handlers:
             if handler.can_handle(update, user_state, order_json):
-                if handler.handle(update, user_state, order_json) == False:
+                if not handler.handle(update, user_state, order_json):
                     break
