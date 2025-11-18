@@ -1,12 +1,19 @@
 import json
 
-import bot.tgClient
-import bot.databaseClient
 from bot.handlers.handler import Handler
+from bot.domain.storage import Storage
+from bot.domain.messenger import Messenger
 
 
 class DrinksHandler(Handler):
-    def can_handle(self, update: dict, state: str, data: dict) -> bool:
+    def can_handle(
+        self,
+        update: dict,
+        state: str,
+        order_json: dict,
+        storage: Storage,
+        messenger: Messenger,
+    ) -> bool:
         if "callback_query" not in update:
             return False
 
@@ -16,7 +23,14 @@ class DrinksHandler(Handler):
         callback_data = update["callback_query"]["data"]
         return callback_data.startswith("drink_")
 
-    def handle(self, update: dict, state: str, data: dict) -> bool:
+    def handle(
+        self,
+        update: dict,
+        state: str,
+        order_json: dict,
+        storage: Storage,
+        messenger: Messenger,
+    ) -> bool:
         telegram_id = update["callback_query"]["from"]["id"]
         callback_data = update["callback_query"]["data"]
 
@@ -32,21 +46,21 @@ class DrinksHandler(Handler):
         }
         selected_drink = drink_mapping.get(callback_data)
 
-        data["drink"] = selected_drink
+        order_json["drink"] = selected_drink
 
-        bot.databaseClient.update_user_data(telegram_id, data)
-        bot.databaseClient.update_user_state(telegram_id, "WAIT_FOR_ORDER_APPROVE")
-        bot.tgClient.answerCallbackQuery(update["callback_query"]["id"])
+        storage.update_user_data(telegram_id, order_json)
+        storage.update_user_state(telegram_id, "WAIT_FOR_ORDER_APPROVE")
+        messenger.answerCallbackQuery(update["callback_query"]["id"])
 
-        bot.tgClient.deleteMessage(
+        messenger.deleteMessage(
             chat_id=update["callback_query"]["message"]["chat"]["id"],
             message_id=update["callback_query"]["message"]["message_id"],
         )
 
         # Create order summary message
-        pizza_name = data.get("pizza_name", "Unknown")
-        pizza_size = data.get("pizza_size", "Unknown")
-        drink = data.get("drink", "Unknown")
+        pizza_name = order_json.get("pizza_name", "Unknown")
+        pizza_size = order_json.get("pizza_size", "Unknown")
+        drink = order_json.get("drink", "Unknown")
 
         order_summary = f"""🍕 **Your Order Summary:**
 
@@ -56,7 +70,7 @@ class DrinksHandler(Handler):
 
 Is everything correct?"""
 
-        bot.tgClient.sendMessage(
+        messenger.sendMessage(
             chat_id=update["callback_query"]["message"]["chat"]["id"],
             text=order_summary,
             parse_mode="Markdown",

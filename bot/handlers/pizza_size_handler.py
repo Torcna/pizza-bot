@@ -1,12 +1,19 @@
 import json
 
-import bot.tgClient
-import bot.databaseClient
 from bot.handlers.handler import Handler
+from bot.domain.storage import Storage
+from bot.domain.messenger import Messenger
 
 
 class PizzaSizeHandler(Handler):
-    def can_handle(self, update: dict, state: str, data: dict) -> bool:
+    def can_handle(
+        self,
+        update: dict,
+        state: str,
+        order_json: dict,
+        storage: Storage,
+        messenger: Messenger,
+    ) -> bool:
         if "callback_query" not in update:
             return False
 
@@ -16,7 +23,14 @@ class PizzaSizeHandler(Handler):
         callback_data = update["callback_query"]["data"]
         return callback_data.startswith("size_")
 
-    def handle(self, update: dict, state: str, data: dict) -> bool:
+    def handle(
+        self,
+        update: dict,
+        state: str,
+        order_json: dict,
+        storage: Storage,
+        messenger: Messenger,
+    ) -> bool:
         telegram_id = update["callback_query"]["from"]["id"]
         callback_data = update["callback_query"]["data"]
 
@@ -28,18 +42,18 @@ class PizzaSizeHandler(Handler):
         }
 
         pizza_size = size_mapping.get(callback_data)
-        data["pizza_size"] = pizza_size
-        bot.databaseClient.update_user_data(telegram_id, data)
-        bot.databaseClient.update_user_state(telegram_id, "WAIT_FOR_DRINKS")
+        order_json["pizza_size"] = pizza_size
+        storage.update_user_data(telegram_id, order_json)
+        storage.update_user_state(telegram_id, "WAIT_FOR_DRINKS")
 
-        bot.tgClient.answerCallbackQuery(update["callback_query"]["id"])
+        messenger.answerCallbackQuery(update["callback_query"]["id"])
 
-        bot.tgClient.deleteMessage(
+        messenger.deleteMessage(
             chat_id=update["callback_query"]["message"]["chat"]["id"],
             message_id=update["callback_query"]["message"]["message_id"],
         )
 
-        bot.tgClient.sendMessage(
+        messenger.sendMessage(
             chat_id=update["callback_query"]["message"]["chat"]["id"],
             text="Please choose some drinks",
             reply_markup=json.dumps(

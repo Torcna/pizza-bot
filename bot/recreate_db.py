@@ -1,3 +1,3 @@
-import bot.databaseClient
+import bot.sqlite_database.storage_sqlite
 
-bot.databaseClient.recreate_db()
+bot.sqlite_database.storage_sqlite.StorageSqlite.recreate_db()

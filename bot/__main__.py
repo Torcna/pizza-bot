@@ -1,26 +1,18 @@
 from bot.dispatcher import Dispatcher
-from bot.handlers.database_logger import DatabaseLogger
-from bot.handlers.ensure_user_exists import EnsureUserExists
-from bot.handlers.message_start_handler import MessageStartHandler
-from bot.handlers.pizza_selection_handler import PizzaSelectionHandler
-from bot.handlers.pizza_size_handler import PizzaSizeHandler
-from bot.handlers.drinks_handler import DrinksHandler
-from bot.handlers.order_finishing_handler import OrderFinishingHandler
+from bot.handlers import get_handlers
+from bot.sqlite_database.storage_sqlite import StorageSqlite
+from bot.tg_bot_realization.telegram_bot import MessengerTelegram
+from bot.domain.storage import Storage
+from bot.domain.messenger import Messenger
 from bot.long_polling import start_long_polling
 
 
 if __name__ == "__main__":
     try:
-        dispatcher = Dispatcher()
-        dispatcher.add_handlers(
-            DatabaseLogger(),
-            EnsureUserExists(),
-            MessageStartHandler(),
-            PizzaSelectionHandler(),
-            PizzaSizeHandler(),
-            DrinksHandler(),
-            OrderFinishingHandler(),
-        )
+        storage: Storage = StorageSqlite()
+        messenger: Messenger = MessengerTelegram()
+        dispatcher = Dispatcher(storage, messenger)
+        dispatcher.add_handlers(*get_handlers())
         start_long_polling(dispatcher)
     except KeyboardInterrupt:
         print("\nStop")

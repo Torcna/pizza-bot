@@ -1,31 +1,45 @@
 import json
 
-import bot.tgClient
-import bot.databaseClient
 from bot.handlers.handler import Handler
+from bot.domain.storage import Storage
+from bot.domain.messenger import Messenger
 
 
 class MessageStartHandler(Handler):
-    def can_handle(self, update: dict, state: str, data: dict) -> bool:
+    def can_handle(
+        self,
+        update: dict,
+        state: str,
+        order_json: dict,
+        storage: Storage,
+        messenger: Messenger,
+    ) -> bool:
         return (
             "message" in update
             and "text" in update["message"]
             and update["message"]["text"] == "/start"
         )
 
-    def handle(self, update: dict, state: str, data: dict) -> bool:
+    def handle(
+        self,
+        update: dict,
+        state: str,
+        order_json: dict,
+        storage: Storage,
+        messenger: Messenger,
+    ) -> bool:
         telegram_id = update["message"]["from"]["id"]
 
-        bot.databaseClient.clear_user_history(telegram_id)
-        bot.databaseClient.update_user_state(telegram_id, "WAIT_FOR_PIZZA_NAME")
+        storage.clear_user_history(telegram_id)
+        storage.update_user_state(telegram_id, "WAIT_FOR_PIZZA_NAME")
 
-        bot.tgClient.sendMessage(
+        messenger.sendMessage(
             chat_id=update["message"]["chat"]["id"],
             text="🍕 Welcome to Pizza shop!",
             reply_markup=json.dumps({"remove_keyboard": True}),
         )
 
-        bot.tgClient.sendMessage(
+        messenger.sendMessage(
             chat_id=update["message"]["chat"]["id"],
             text="Please choose pizza type",
             reply_markup=json.dumps(

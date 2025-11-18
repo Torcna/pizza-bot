@@ -1,12 +1,19 @@
 import json
 
-import bot.tgClient
-import bot.databaseClient
 from bot.handlers.handler import Handler
+from bot.domain.storage import Storage
+from bot.domain.messenger import Messenger
 
 
 class PizzaSelectionHandler(Handler):
-    def can_handle(self, update: dict, state: str, data: dict) -> bool:
+    def can_handle(
+        self,
+        update: dict,
+        state: str,
+        order_json: dict,
+        storage: Storage,
+        messenger: Messenger,
+    ) -> bool:
         if "callback_query" not in update:
             return False
 
@@ -16,19 +23,26 @@ class PizzaSelectionHandler(Handler):
         callback_data = update["callback_query"]["data"]
         return callback_data.startswith("pizza_")
 
-    def handle(self, update: dict, state: str, data: dict) -> bool:
+    def handle(
+        self,
+        update: dict,
+        state: str,
+        order_json: dict,
+        storage: Storage,
+        messenger: Messenger,
+    ) -> bool:
         telegram_id = update["callback_query"]["from"]["id"]
         callback_data = update["callback_query"]["data"]
 
         pizza_name = callback_data.replace("pizza_", "").replace("_", " ").title()
-        bot.databaseClient.update_user_data(telegram_id, {"pizza_name": pizza_name})
-        bot.databaseClient.update_user_state(telegram_id, "WAIT_FOR_PIZZA_SIZE")
-        bot.tgClient.answerCallbackQuery(update["callback_query"]["id"])
-        bot.tgClient.deleteMessage(
+        storage.update_user_data(telegram_id, {"pizza_name": pizza_name})
+        storage.update_user_state(telegram_id, "WAIT_FOR_PIZZA_SIZE")
+        messenger.answerCallbackQuery(update["callback_query"]["id"])
+        messenger.deleteMessage(
             chat_id=update["callback_query"]["message"]["chat"]["id"],
             message_id=update["callback_query"]["message"]["message_id"],
         )
-        bot.tgClient.sendMessage(
+        messenger.sendMessage(
             chat_id=update["callback_query"]["message"]["chat"]["id"],
             text="Please select pizza size",
             reply_markup=json.dumps(
