@@ -12,7 +12,6 @@ class MessengerTelegram(Messenger):
 
     def makeRequest(self, method: str, **params) -> dict:
         jsonData = json.dumps(params).encode("utf-8")
-        print(jsonData)
         request = urllib.request.Request(
             method="POST",
             url=f"{os.getenv('TELEGRAM_BASE_URI')}{os.getenv('TOKEN')}/{method}",
