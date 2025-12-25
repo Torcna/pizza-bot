@@ -1,3 +1,4 @@
+import asyncio
 import json
 
 from bot.handlers.handler import Handler
@@ -23,7 +24,7 @@ class PizzaSelectionHandler(Handler):
         callback_data = update["callback_query"]["data"]
         return callback_data.startswith("pizza_")
 
-    def handle(
+    async def handle(
         self,
         update: dict,
         state: str,
@@ -35,14 +36,16 @@ class PizzaSelectionHandler(Handler):
         callback_data = update["callback_query"]["data"]
 
         pizza_name = callback_data.replace("pizza_", "").replace("_", " ").title()
-        storage.update_user_data(telegram_id, {"pizza_name": pizza_name})
-        storage.update_user_state(telegram_id, "WAIT_FOR_PIZZA_SIZE")
-        messenger.answerCallbackQuery(update["callback_query"]["id"])
-        messenger.deleteMessage(
-            chat_id=update["callback_query"]["message"]["chat"]["id"],
-            message_id=update["callback_query"]["message"]["message_id"],
+        await storage.update_user_order(telegram_id, {"pizza_name": pizza_name})
+        await storage.update_user_state(telegram_id, "WAIT_FOR_PIZZA_SIZE")
+        await asyncio.gather(
+            messenger.answerCallbackQuery(update["callback_query"]["id"]),
+            messenger.deleteMessage(
+                chat_id=update["callback_query"]["message"]["chat"]["id"],
+                message_id=update["callback_query"]["message"]["message_id"],
+            ),
         )
-        messenger.sendMessage(
+        await messenger.sendMessage(
             chat_id=update["callback_query"]["message"]["chat"]["id"],
             text="Please select pizza size",
             reply_markup=json.dumps(

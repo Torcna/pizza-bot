@@ -33,7 +33,7 @@ DOCKER_NETWORK=pizza_bot_network
 POSTGRES_VOLUME=postgres_data
 POSTGRES_CONTAINER=postgres_17
 
-BOT_IMAGE=alekseybaranov/unn_pizza_bot
+BOT_IMAGE=alekseybaranov2/unn-pizza-bot
 BOT_CONTAINER=pizza_bot
 
 # Автоматически загружаем переменные из .env

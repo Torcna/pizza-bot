@@ -3,3 +3,5 @@ black
 ruff
 pytest
 pg8000
+asyncio
+asyncpg

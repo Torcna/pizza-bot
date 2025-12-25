@@ -3,17 +3,17 @@ from abc import ABC, abstractmethod
 
 class Messenger(ABC):
     @abstractmethod
-    def getUpdates(self, **params) -> dict:
+    async def getUpdates(self, **params) -> dict:
         pass
 
     @abstractmethod
-    def sendMessage(self, chat_id: int, text: str, **params) -> dict:
+    async def sendMessage(self, chat_id: int, text: str, **params) -> dict:
         pass
 
     @abstractmethod
-    def deleteMessage(self, chat_id: int, message_id: int) -> dict:
+    async def deleteMessage(self, chat_id: int, message_id: int) -> dict:
         pass
 
     @abstractmethod
-    def answerCallbackQuery(self, callback_query_id: str, **kwargs) -> dict:
+    async def answerCallbackQuery(self, callback_query_id: str, **kwargs) -> dict:
         pass

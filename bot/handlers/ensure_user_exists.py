@@ -15,7 +15,7 @@ class EnsureUserExists(Handler):
         # This handler should run for any update that has a user ID
         return "message" in update and "from" in update["message"]
 
-    def handle(
+    async def handle(
         self,
         update: dict,
         state: str,
@@ -25,7 +25,7 @@ class EnsureUserExists(Handler):
     ) -> bool:
         telegram_id = update["message"]["from"]["id"]
 
-        storage.ensure_user_exists(telegram_id)
+        await storage.ensure_user_exists(telegram_id)
 
         # Continue processing with other handlers
         return True

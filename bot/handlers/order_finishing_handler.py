@@ -1,3 +1,4 @@
+import asyncio
 import json
 
 from bot.handlers.handler import Handler
@@ -23,7 +24,7 @@ class OrderFinishingHandler(Handler):
         callback_data = update["callback_query"]["data"]
         return callback_data in ["order_approve", "order_restart"]
 
-    def handle(
+    async def handle(
         self,
         update: dict,
         state: str,
@@ -33,15 +34,16 @@ class OrderFinishingHandler(Handler):
     ) -> bool:
         telegram_id = update["callback_query"]["from"]["id"]
         callback_data = update["callback_query"]["data"]
-
-        messenger.answerCallbackQuery(update["callback_query"]["id"])
-        messenger.deleteMessage(
-            chat_id=update["callback_query"]["message"]["chat"]["id"],
-            message_id=update["callback_query"]["message"]["message_id"],
+        await asyncio.gather(
+            messenger.answerCallbackQuery(update["callback_query"]["id"]),
+            messenger.deleteMessage(
+                chat_id=update["callback_query"]["message"]["chat"]["id"],
+                message_id=update["callback_query"]["message"]["message_id"],
+            ),
         )
 
         if callback_data == "order_approve":
-            storage.update_user_state(telegram_id, "ORDER_FINISHED")
+            await storage.update_user_state(telegram_id, "ORDER_FINISHED")
 
             pizza_name = order_json.get("pizza_name", "Unknown")
             pizza_size = order_json.get("pizza_size", "Unknown")
@@ -58,20 +60,20 @@ Thank you for your order! Your pizza will be ready soon.
 Send /start to place another order."""
 
             # Send order confirmation message
-            messenger.sendMessage(
+            await messenger.sendMessage(
                 chat_id=update["callback_query"]["message"]["chat"]["id"],
                 text=order_confirmation,
                 parse_mode="Markdown",
             )
 
         elif callback_data == "order_restart":
-            storage.clear_user_history(telegram_id)
+            await storage.clear_user_history(telegram_id)
 
             # Update user state to wait for pizza selection
-            storage.update_user_state(telegram_id, "WAIT_FOR_PIZZA_NAME")
+            await storage.update_user_state(telegram_id, "WAIT_FOR_PIZZA_NAME")
 
             # Send pizza selection message with inline keyboard
-            messenger.sendMessage(
+            await messenger.sendMessage(
                 chat_id=update["callback_query"]["message"]["chat"]["id"],
                 text="Please choose pizza type",
                 reply_markup=json.dumps(

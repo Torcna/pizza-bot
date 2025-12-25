@@ -1,5 +1,5 @@
 import json
-
+import asyncio
 from bot.handlers.handler import Handler
 from bot.domain.storage import Storage
 from bot.domain.messenger import Messenger
@@ -23,7 +23,7 @@ class DrinksHandler(Handler):
         callback_data = update["callback_query"]["data"]
         return callback_data.startswith("drink_")
 
-    def handle(
+    async def handle(
         self,
         update: dict,
         state: str,
@@ -48,13 +48,14 @@ class DrinksHandler(Handler):
 
         order_json["drink"] = selected_drink
 
-        storage.update_user_data(telegram_id, order_json)
-        storage.update_user_state(telegram_id, "WAIT_FOR_ORDER_APPROVE")
-        messenger.answerCallbackQuery(update["callback_query"]["id"])
-
-        messenger.deleteMessage(
-            chat_id=update["callback_query"]["message"]["chat"]["id"],
-            message_id=update["callback_query"]["message"]["message_id"],
+        await storage.update_user_order(telegram_id, order_json)
+        await storage.update_user_state(telegram_id, "WAIT_FOR_ORDER_APPROVE")
+        await asyncio.gather(
+            messenger.answerCallbackQuery(update["callback_query"]["id"]),
+            messenger.deleteMessage(
+                chat_id=update["callback_query"]["message"]["chat"]["id"],
+                message_id=update["callback_query"]["message"]["message_id"],
+            ),
         )
 
         # Create order summary message
@@ -70,7 +71,7 @@ class DrinksHandler(Handler):
 
 Is everything correct?"""
 
-        messenger.sendMessage(
+        await messenger.sendMessage(
             chat_id=update["callback_query"]["message"]["chat"]["id"],
             text=order_summary,
             parse_mode="Markdown",

@@ -1,5 +1,5 @@
 import json
-
+import asyncio
 from bot.handlers.handler import Handler
 from bot.domain.storage import Storage
 from bot.domain.messenger import Messenger
@@ -20,7 +20,7 @@ class MessageStartHandler(Handler):
             and update["message"]["text"] == "/start"
         )
 
-    def handle(
+    async def handle(
         self,
         update: dict,
         state: str,
@@ -30,41 +30,52 @@ class MessageStartHandler(Handler):
     ) -> bool:
         telegram_id = update["message"]["from"]["id"]
 
-        storage.clear_user_history(telegram_id)
-        storage.update_user_state(telegram_id, "WAIT_FOR_PIZZA_NAME")
-
-        messenger.sendMessage(
-            chat_id=update["message"]["chat"]["id"],
-            text="🍕 Welcome to Pizza shop!",
-            reply_markup=json.dumps({"remove_keyboard": True}),
+        await asyncio.gather(
+            storage.clear_user_history(telegram_id),
+            storage.update_user_state(telegram_id, "WAIT_FOR_PIZZA_NAME"),
         )
-
-        messenger.sendMessage(
-            chat_id=update["message"]["chat"]["id"],
-            text="Please choose pizza type",
-            reply_markup=json.dumps(
-                {
-                    "inline_keyboard": [
-                        [
-                            {"text": "Margherita", "callback_data": "pizza_margherita"},
-                            {"text": "Pepperoni", "callback_data": "pizza_pepperoni"},
+        await asyncio.gather(
+            messenger.sendMessage(
+                chat_id=update["message"]["chat"]["id"],
+                text="🍕 Welcome to Pizza shop!",
+                reply_markup=json.dumps({"remove_keyboard": True}),
+            ),
+            messenger.sendMessage(
+                chat_id=update["message"]["chat"]["id"],
+                text="Please choose pizza type",
+                reply_markup=json.dumps(
+                    {
+                        "inline_keyboard": [
+                            [
+                                {
+                                    "text": "Margherita",
+                                    "callback_data": "pizza_margherita",
+                                },
+                                {
+                                    "text": "Pepperoni",
+                                    "callback_data": "pizza_pepperoni",
+                                },
+                            ],
+                            [
+                                {
+                                    "text": "Quattro Stagioni",
+                                    "callback_data": "pizza_quattro_stagioni",
+                                },
+                                {
+                                    "text": "Capricciosa",
+                                    "callback_data": "pizza_capricciosa",
+                                },
+                            ],
+                            [
+                                {"text": "Diavola", "callback_data": "pizza_diavola"},
+                                {
+                                    "text": "Prosciutto",
+                                    "callback_data": "pizza_prosciutto",
+                                },
+                            ],
                         ],
-                        [
-                            {
-                                "text": "Quattro Stagioni",
-                                "callback_data": "pizza_quattro_stagioni",
-                            },
-                            {
-                                "text": "Capricciosa",
-                                "callback_data": "pizza_capricciosa",
-                            },
-                        ],
-                        [
-                            {"text": "Diavola", "callback_data": "pizza_diavola"},
-                            {"text": "Prosciutto", "callback_data": "pizza_prosciutto"},
-                        ],
-                    ],
-                },
+                    },
+                ),
             ),
         )
         return False
